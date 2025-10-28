@@ -386,8 +386,8 @@ const Chatbot = () => {
                           animate={{ opacity: 1 }}
                           transition={{ duration: 0.5 }}
                           className={`${
-                            line.startsWith('🤔') ? 'font-semibold text-indigo-600 dark:text-indigo-400' :
-                            line.startsWith('───') ? 'text-gray-400 dark:text-gray-500' :
+                            line && typeof line === 'string' && line.startsWith('🤔') ? 'font-semibold text-indigo-600 dark:text-indigo-400' :
+                            line && typeof line === 'string' && line.startsWith('───') ? 'text-gray-400 dark:text-gray-500' :
                             message.isThinking && i === message.content.length - 1 ? 'text-gray-600 dark:text-gray-400' :
                             ''
                           }`}
@@ -396,7 +396,7 @@ const Chatbot = () => {
                         </motion.div>
                       ))
                     ) : (
-                      message.content
+                      message.content || 'Loading...'
                     )}
                   </div>
                   <div className="flex items-center justify-between mt-1">

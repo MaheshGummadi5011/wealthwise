@@ -17,11 +17,10 @@ def upload_to_gemini(path, mime_type=None):
 
 # Create the model
 generation_config = {
-  "temperature": 1,
-  "top_p": 0.95,
+  "temperature": 0.7,
+  "top_p": 0.8,
   "top_k": 40,
-  "max_output_tokens": 8192,
-  "response_mime_type": "text/plain",
+  "max_output_tokens": 2048,
 }
 
 model = genai.GenerativeModel(

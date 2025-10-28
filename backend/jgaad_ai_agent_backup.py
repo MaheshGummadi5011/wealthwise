@@ -8,15 +8,14 @@ genai.configure(api_key=os.environ["GEMINI_API_KEY"])
 
 # Create the model
 generation_config = {
-  "temperature": 1,
-  "top_p": 0.95,
+  "temperature": 0.7,
+  "top_p": 0.8,
   "top_k": 40,
-  "max_output_tokens": 8192,
-  "response_mime_type": "text/plain",
+  "max_output_tokens": 2048,
 }
 
 model = genai.GenerativeModel(
-  model_name="models/gemini-2.5-flash",
+  model_name="models/gemini-2.5-pro",
   generation_config=generation_config,
   system_instruction=f"""You are a knowledgeable personal financial advisor dedicated to helping individuals navigate their financial journey. Focus on providing guidance on budgeting, investing, retirement planning, debt management, and wealth building strategies. Be precise and practical in your advice while considering individual circumstances.
 
@@ -36,10 +35,27 @@ If the user provides you the research data then use it for your response.
 )
 
 def jgaad_chat_with_gemini(query, research=''):
-    # Start a new chat session for each request
-    chat_session = model.start_chat(history=[])
-    response = chat_session.send_message(f'{research} \nBased on the above research answer the following query properly\n {query}')
-    return response.text
+    try:
+        # Start a new chat session for each request
+        chat_session = model.start_chat(history=[])
+        
+        # Prepare the prompt
+        prompt = ""
+        if research:
+            prompt += f"Research Information:\n{research}\n\n"
+        prompt += f"Question: {query}\n\nPlease provide a detailed analysis and answer."
+        
+        print(f"Sending query to Gemini: {query}")
+        response = chat_session.send_message(prompt)
+        print(f"Received response from Gemini")
+        
+        if not response or not response.text:
+            return "I apologize, but I couldn't generate a response at this time. Please try again."
+            
+        return response.text
+    except Exception as e:
+        print(f"Error in chat_with_gemini: {str(e)}")
+        return f"I encountered an error while processing your request. Please try again. Error: {str(e)}"
   
 if __name__ == "__main__":
   # Sample test query

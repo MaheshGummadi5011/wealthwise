@@ -16,38 +16,73 @@ def home():
 # =================== DYNAMIC APIS ===================
 @app.route('/agent', methods=['POST'])
 def agent():
-    inp = request.form.get('input')
-    # response = get_agent_response(inp)
-    if inp:
-        # run in terminal
-        print(inp)
-        process = subprocess.Popen(['python', 'agent.py', inp], 
-                     stdout=subprocess.PIPE, 
-                     stderr=subprocess.PIPE,
-                     universal_newlines=True)
-        
-        output = []
-        # Stream output in real-time
-        while True:
-            line = process.stdout.readline()
-            if not line and process.poll() is not None:
-                break
-            if line:
-                print(line.strip())  # Print to terminal in real-time
-                output.append(line)
-        
-        output_str = ''.join(output)
-        process.wait()
+    try:
+        inp = request.form.get('input')
+        if not inp:
+            return jsonify({'error': 'No input provided'}), 400
 
-        # Use regex to extract the response between <Response> tags
-        final_answer = re.search(r'<Response>(.*?)</Response>', output_str, re.DOTALL)
-        if final_answer:
-            final_answer = final_answer.group(1).strip()
-        else:
-            final_answer = jgaad_chat_with_gemini(inp, output_str)
-        # response = get_agent_response(inp)
-        return jsonify({'output': final_answer, 'thought': output_str})
-    return "no input"
+        print(f"Received query: {inp}")
+        
+        # First try direct Gemini response
+        try:
+            direct_response = jgaad_chat_with_gemini(inp)
+            if direct_response:
+                return jsonify({
+                    'output': direct_response,
+                    'source': 'gemini',
+                    'status': 'success'
+                })
+        except Exception as e:
+            print(f"Gemini direct response failed: {str(e)}")
+        
+        # Fallback to agent if Gemini fails
+        try:
+            process = subprocess.Popen(
+                ['python', 'agent.py', inp],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True
+            )
+            
+            output = []
+            while True:
+                line = process.stdout.readline()
+                if not line and process.poll() is not None:
+                    break
+                if line:
+                    print(f"Agent output: {line.strip()}")
+                    output.append(line)
+            
+            output_str = ''.join(output)
+            process.wait()
+
+            final_answer = re.search(r'<Response>(.*?)</Response>', output_str, re.DOTALL)
+            if final_answer:
+                return jsonify({
+                    'output': final_answer.group(1).strip(),
+                    'thought': output_str,
+                    'source': 'agent',
+                    'status': 'success'
+                })
+            else:
+                return jsonify({
+                    'error': 'Could not extract response from agent',
+                    'raw_output': output_str
+                }), 500
+                
+        except Exception as e:
+            print(f"Agent processing failed: {str(e)}")
+            return jsonify({
+                'error': f'Agent processing failed: {str(e)}',
+                'status': 'error'
+            }), 500
+            
+    except Exception as e:
+        print(f"General error in /agent endpoint: {str(e)}")
+        return jsonify({
+            'error': f'An unexpected error occurred: {str(e)}',
+            'status': 'error'
+        }), 500
 
 @app.route('/ai-financial-path', methods=['POST'])
 def ai_financial_path():

@@ -21,7 +21,7 @@ load_dotenv()
 # Choose the LLM to use
 llm = ChatGroq(model="llama-3.3-70b-versatile")
 
-# llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash-exp")
+llm = ChatGoogleGenerativeAI(model="gemini-2.5-pro")
 
 # set my message
 query = """ Should I invest in Cipla pharmaceuticals? """
